@@ -72,15 +72,7 @@ function traduzErro(code: string): string {
           v-model="email"
           type="email"
           required
-          :disabled="loading"
-          style="
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-          "
-        />
+          :disabled="loading"/>
       </div>
 
       <div style="margin-bottom: 16px">
@@ -98,13 +90,6 @@ function traduzErro(code: string): string {
           type="password"
           required
           :disabled="loading"
-          style="
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-          "
         />
       </div>
 

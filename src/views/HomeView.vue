@@ -3,7 +3,9 @@ import { onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { signOut, onAuthStateChanged, type Unsubscribe } from 'firebase/auth';
 import { auth } from '../firebase';
-import HelloWorld from '../components/HelloWorld.vue';
+import '../../src/css/homeView.css';
+import CarteiraDigital from '../components/CarteiraDigital.vue';
+const email = auth.currentUser?.email ?? '';
 
 const router = useRouter();
 let unsubscribe: Unsubscribe | null = null;
@@ -23,7 +25,6 @@ onUnmounted(() => {
 async function sair() {
   try {
     await signOut(auth);
-    // O onAuthStateChanged acima cuida do redirecionamento.
   } catch (e) {
     console.error('Erro ao sair:', e);
   }
@@ -31,36 +32,15 @@ async function sair() {
 </script>
 
 <template>
-  <HelloWorld />
-  <div
-    style="
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 16px;
-      font-family: sans-serif;
-    "
-  >
-    <header
-      style="
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-      "
-    >
-      <h1 style="font-size: 20px; margin: 0">Instruções</h1>
+  <div>
+    <header class="homeView">
+      <span v-if="email">{{ email }}</span>
       <button
-        @click="sair"
-        style="
-          padding: 6px 12px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-          background: #fff;
-          cursor: pointer;
-        "
-      >
+        @click="sair">
         Sair
       </button>
     </header>
+
+    <CarteiraDigital/>
   </div>
 </template>
