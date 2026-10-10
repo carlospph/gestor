@@ -4,6 +4,10 @@
   box-sizing:border-box;
 }
 
+html{
+    font-family: Arial, Helvetica, sans-serif;
+}
+
 #login{
   display:grid;
   grid-template-columns:1fr 2fr;
