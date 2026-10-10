@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import '@/css/loginView.css';
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -47,73 +48,56 @@ function traduzErro(code: string): string {
 </script>
 
 <template>
-  <div
-    style="
-      max-width: 360px;
-      margin: 80px auto;
-      padding: 24px;
-      font-family: sans-serif;
-    "
-  >
-    <h1 style="margin: 0 0 24px; font-size: 22px">Entrar</h1>
 
-    <form @submit.prevent="entrar">
-      <div style="margin-bottom: 12px">
-        <label
-          style="
-            display: block;
-            font-size: 13px;
-            color: #555;
-            margin-bottom: 4px;
-          "
-          >E-mail</label
-        >
+<section id="login">
+  <div class="box-img">
+    <h2>vue</h2>
+  </div>
+
+
+
+  <div class="form-container">
+      <div class="form-content">
+      <h1>Acesso ao sistema</h1>
+      <form @submit.prevent="entrar" class="form">
+      <div>
+        <label for="email">E-mail</label>
         <input
           v-model="email"
           type="email"
+          id="email"
           required
+          class="field"
           :disabled="loading"/>
       </div>
 
-      <div style="margin-bottom: 16px">
-        <label
-          style="
-            display: block;
-            font-size: 13px;
-            color: #555;
-            margin-bottom: 4px;
-          "
-          >Senha</label
-        >
+      <div>
+        <label for="senha">Senha</label>
         <input
           v-model="password"
           type="password"
           required
+          class="field"
           :disabled="loading"
+          id="senha"
         />
       </div>
 
       <button
         type="submit"
-        :disabled="loading"
-        style="
-          width: 100%;
-          padding: 10px;
-          border: none;
-          border-radius: 6px;
-          background: #4f46e5;
-          color: #fff;
-          font-weight: 600;
-          cursor: pointer;
-        "
-        :style="{ opacity: loading ? 0.6 : 1 }"
-      >
+        :disabled="loading" class="btn-entrar">
         {{ loading ? 'Entrando...' : 'Entrar' }}
       </button>
 
-      <p v-if="error" style="color: #dc2626; margin-top: 12px; font-size: 14px">
+      <p v-if="error" class="error">
         ⚠️ {{ error }}
       </p>
-    </form>
+      </form>
+      </div>
   </div>
+    
+
+
+</section>
+
 </template>
