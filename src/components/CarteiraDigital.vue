@@ -1,97 +1,184 @@
 <template>
-  <h3>Carteira digital</h3>
+  <section class="area-carteira">
+    <h3 class="title-carteira">Carteira digital</h3>
 
-  <div class="campos">
-    <input type="text" placeholder="R$" v-model="formulario.valor"/>
-    <input type="text" placeholder="Descrição" v-model="formulario.descricao"/>
-    <input type="date" placeholder="Data" v-model="formulario.dataEvento"/>
-    <select v-model="formulario.tipoEvento">
-      <option value="selecione">Selecione o tipo</option>
-      <option value="receita">receita</option>
-      <option value="gasto">gasto</option>
-    </select>
-    <button @click="addTransation">Adicionar</button>
-  </div>
+  <div class="colunas">
+    <div class="container-resumo">
+      <span class="box-resumo">
+        <img width="96" height="96" src="https://img.icons8.com/parakeet-partial-filled/96/F25081/graph.png" alt="graph"/>
+        <p>
+          {{ moedaBR(totalGastos) }}
+        </p>
 
+      </span>
 
-  <div class="lista-transacoes">
-    <div v-for="transacao in transacoes" :key="transacao.id">
-    <p>
-      {{transacao.descricao}}
-    </p>
-    <p>{{transacao.dataEvento}}</p>
-    <p>{{transacao.tipoEvento}}</p>
-    <p>{{transacao.valor}}</p>
-    <div class="actions">
-      <button class="btn-remove" @click="remover(transacao.id)">Excluir</button>
-      <button class="btn-edit">Editar</button>
+       <span class="box-resumo">
+        <img width="80" height="80" src="https://img.icons8.com/dotty/80/40C057/graph.png" alt="graph"/>
+        <p>
+         {{ moedaBR(totalReceita) }}
+       </p>
+      </span>
+    </div>
+
+    <div>
+      <form class="form" @submit.prevent="salvarTransacao">
+        <CampoTexto type="number" placeholder="R$" v-model="formulario.valor"/>
+        <CampoTexto type="text" placeholder="Descrição" v-model="formulario.descricao"/>
+        <CampoTexto type="date" placeholder="Data evento" v-model="formulario.dataEvento"/>
+        <select v-model="formulario.tipoEvento">
+          <option value="">Selecione o tipo</option>
+          <option value="receita">receita</option>
+          <option value="gasto">gasto</option>
+        </select>
+        <button type="submit" class="btn-add">Adicionar</button>
+      </form>
     </div>
   </div>
-  </div>
+    <!-- Modal de Edição -->
+    <div v-if="mostraModal" class="modal-overlay">
+      <div class="modal-content form">
+        <h3>Editar Transação</h3>
+        <CampoTexto type="number" placeholder="R$" v-model="formulario.valor"/>
+        <CampoTexto type="text" placeholder="Descrição" v-model="formulario.descricao"/>
+        <CampoTexto type="date" placeholder="Data evento" v-model="formulario.dataEvento"/>
+        <select v-model="formulario.tipoEvento">
+          <option value="receita">receita</option>
+          <option value="gasto">gasto</option>
+        </select>
+        <div class="actions">
+          <button @click="salvarTransacao" class="btn-salve">Salvar Alterações</button>
+          <button @click="cancelarEdicao" class="btn-cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search">
+      <CampoTexto type="text" placeholder="Buscar..." v-model="termoBusca"/>
+    </div>
+
+    <div class="carteira cards">
+      <div v-for="transacao in transacoesPaginadas" :key="transacao.id" class="card" :class="transacao.tipoEvento === 'receita' ? 'receita' : 'gasto'">
+        <p class="descricao">{{transacao.descricao}}</p>
+        <p>{{formataDataBR(transacao.dataEvento)}}</p>
+        <p>{{ transacao.tipoEvento }}</p>
+        <p>{{moedaBR(transacao.valor)}}</p>
+        <div class="actions">
+          <button class="btn-remove" @click="remover(transacao.id)">Excluir</button>
+          <button class="btn-edit" @click="iniciarEdicao(transacao)">Editar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="paginacao">
+      <button :disabled="paginaAtual === 1" @click="paginaAtual--" class="btn-ant">Anterior</button>
+      <span>{{ paginaAtual }} de {{ totalPaginas }}</span>
+      <button :disabled="paginaAtual === totalPaginas" @click="paginaAtual++" class="btn-next">Próxima</button>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
-import '../../src/css/carteiraDigital.css';
+import { ref, computed } from 'vue';
+import '@/css/carteiraDigital.css';
+import CampoTexto from '@/components/CampoTexto.vue';
 
-interface Formulario{
-  valor:number,
-  descricao:string,
-  dataEvento: string,
-  tipoEvento: string,
+interface Transacao {
+  id: number;
+  valor: number;
+  descricao: string;
+  dataEvento: string;
+  tipoEvento: string;
 }
 
-interface Transacao extends Formulario{
-  id:number
-}
-
-const formulario = ref<Formulario>({
-  valor:null,
-  descricao:'',
-  tipoEvento:'',
-  dataEvento:''
-})
-
-const transacoes = ref<Transacao[]>([{
-  id:1,
-  valor:2000,
-  descricao:"Salário",
-  dataEvento: "2026-09-30",
-  tipoEvento: "receita"
-},
-{
-  id:2,
-  valor:4000,
-  descricao:"Salário PLR",
-  dataEvento: "2026-09-22",
-  tipoEvento: "receita"
-},
-{
-  id:3,
-  valor:500,
-  descricao:"Supermercado",
-  dataEvento: "2026-09-30",
-  tipoEvento: "gasto"
-}])
+const termoBusca = ref('');
+const paginaAtual = ref(1);
+const itensPorPagina = 5;
+const editandoId = ref<number | null>(null);
+const mostraModal = ref(false);
 
 
-function addTransation(){
-  transacoes.value.push({
-    id:Date.now(),
-    descricao:formulario.value.descricao,
-    valor:formulario.value.valor,
-    tipoEvento: formulario.value.tipoEvento,
-    dataEvento:formulario.value.dataEvento
-  })
 
-  alert("Adicionada a transação")
-}
+const totalGastos = computed(() => {
+  return transacoes.value
+    .filter(transacao => transacao.tipoEvento === 'gasto')
+    .reduce((acc, transacao) => acc + transacao.valor, 0);
+});
 
 
-function remover(id:number) :void{
-  if(confirm("Deseja apagar transação?")){
-    transacoes.value = transacoes.value.filter(t=>t.id !== id)
+
+const totalReceita = computed(() => {
+  return transacoes.value
+    .filter(transacao => transacao.tipoEvento === 'receita')
+    .reduce((acc, transacao) => acc + transacao.valor, 0);
+});
+
+
+const formulario = ref<Omit<Transacao, 'id'>>({
+  valor: 0, descricao: '', tipoEvento: '', dataEvento: ''
+});
+
+const transacoes = ref<Transacao[]>([
+  { id: 1, valor: 2000, descricao: "Salário", dataEvento: "2026-09-30", tipoEvento: "receita" }
+]);
+
+const transacoesFiltradas = computed(() => 
+  transacoes.value.filter(t => t.descricao.toLowerCase().includes(termoBusca.value.toLowerCase()))
+);
+
+const totalPaginas = computed(() => Math.max(1, Math.ceil(transacoesFiltradas.value.length / itensPorPagina)));
+
+const transacoesPaginadas = computed(() => {
+  const inicio = (paginaAtual.value - 1) * itensPorPagina;
+  return transacoesFiltradas.value.slice(inicio, inicio + itensPorPagina);
+});
+
+function salvarTransacao() {
+   if (!formulario.value.valor || !formulario.value.descricao || !formulario.value.dataEvento || !formulario.value.tipoEvento) {
+    alert("Por favor, preencha todos os campos.");
+    return;  
   }
+
+  if (editandoId.value) {
+    const index = transacoes.value.findIndex(t => t.id === editandoId.value);
+    transacoes.value[index] = { id: editandoId.value, ...formulario.value };
+    editandoId.value = null;
+    mostraModal.value = false;
+  } else {
+    transacoes.value.push({ id: Date.now(), ...formulario.value });
+  }
+  limparFormulario();
+}
+
+
+function iniciarEdicao(t: Transacao) {
+  editandoId.value = t.id;
+  formulario.value = { ...t };
+  mostraModal.value = true;
+}
+
+function cancelarEdicao() {
+  editandoId.value = null;
+  mostraModal.value = false;
+  limparFormulario();
+}
+
+function limparFormulario() {
+  formulario.value = { valor: 0, descricao: '', tipoEvento: '', dataEvento: '' };
+}
+
+function remover(id: number) {
+  if (confirm("Deseja apagar transação?")) {
+    transacoes.value = transacoes.value.filter(t => t.id !== id);
+  }
+}
+
+function moedaBR(valor: number): string {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formataDataBR(data: string): string {
+  const [ano, mes, dia] = data.split('-');
+  return `${dia}/${mes}/${ano}`;
 }
 
 </script>
