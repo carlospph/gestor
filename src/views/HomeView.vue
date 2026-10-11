@@ -36,7 +36,7 @@ async function sair() {
     <header class="homeView">
       <span v-if="email">{{ email }}</span>
       <button
-        @click="sair">
+        @click="sair" class="btn-cancel">
         Sair
       </button>
     </header>
